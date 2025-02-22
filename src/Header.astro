@@ -1,0 +1,172 @@
+---
+import { Mountain } from 'lucide-react';
+
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+
+const navLinks = [
+  { href: "/about", label: "企業情報" },
+  { href: "/service", label: "事業内容" },
+  { href: "/cases", label: "実績紹介" },
+  { href: "/media", label: "BLOG" },
+];
+
+const isActive = (href: string) => currentPath === href;
+---
+
+<header 
+  data-header
+  class="fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-white dark:bg-gray-900"
+>
+  <div class="container mx-auto px-4 lg:px-6">
+    <div class="flex h-16 items-center justify-between">
+      <!-- ロゴ -->
+      <a 
+        href="/" 
+        class="relative z-50 flex items-center space-x-2 hover-lift"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mountain h-6 w-6 lg:h-8 lg:w-8 text-primary animate-float">
+          <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
+        </svg>
+        <span class="text-lg lg:text-xl font-bold gradient-text">Kumono</span>
+      </a>
+
+      <!-- デスクトップナビゲーション -->
+      <nav class="hidden lg:flex lg:items-center lg:space-x-6">
+        {navLinks.map((link) => (
+          <a
+            href={link.href}
+            class={`
+              hover-underline transition-smooth px-2 py-1
+              ${isActive(link.href) ? "text-primary font-medium" : ""}
+            `}
+          >
+            {link.label}
+          </a>
+        ))}
+        <a
+          href="/contact"
+          class="
+            inline-flex items-center px-4 py-2 rounded-full
+            bg-primary text-white hover:bg-primary/90
+            transition-smooth hover-lift
+          "
+        >
+          お問い合わせ
+        </a>
+      </nav>
+
+      <!-- ハンバーガーメニュー -->
+      <button 
+        data-menu-button
+        class="relative z-50 lg:hidden focus:outline-none" 
+        aria-label="Toggle Menu"
+      >
+        <div class="relative w-6 h-6">
+          <span class="absolute h-0.5 w-full bg-foreground transform transition-all duration-300 rotate-0 top-1"></span>
+          <span class="absolute h-0.5 w-full bg-foreground transform transition-all duration-300 opacity-100 top-3"></span>
+          <span class="absolute h-0.5 w-full bg-foreground transform transition-all duration-300 rotate-0 top-5"></span>
+        </div>
+      </button>
+    </div>
+
+    <!-- モバイルナビゲーション -->
+    <div 
+      data-menu-content
+      class="
+        fixed top-0 right-0 bottom-0 w-[60%] max-w-sm 
+        bg-white/100 dark:bg-gray-900/100
+        transition-all duration-300 ease-in-out transform
+        min-h-screen pt-16 shadow-2xl
+        lg:hidden overflow-y-auto z-50
+        opacity-0 translate-x-full pointer-events-none
+      "
+    >
+      <!-- バツボタン -->
+      <button
+        class="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-smooth"
+        aria-label="Close Menu"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+      <nav class="container h-full mx-auto px-4 py-6">
+        <div class="flex flex-col space-y-6">
+          {navLinks.map((link) => (
+            <a
+              href={link.href}
+              class={`
+                px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800
+                transition-smooth text-lg
+                ${isActive(link.href) ? "text-primary font-medium" : ""}
+              `}
+            >
+              {link.label}
+            </a>
+          ))}
+          <a
+            href="/contact"
+            class="
+              mt-4 px-4 py-3 bg-primary text-white rounded-full
+              hover:bg-primary/90 transition-smooth text-center text-lg
+            "
+          >
+            お問い合わせ
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <!-- オーバーレイ背景 -->
+    <div
+      class="
+        fixed inset-0 bg-black/50
+        transition-opacity duration-300
+        lg:hidden z-40
+        opacity-0 pointer-events-none
+      "
+      aria-hidden="true"
+    />
+  </div>
+</header>
+
+<style>
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-0.5;
+  }
+  
+  .hover-underline {
+    @apply relative;
+  }
+  
+  .hover-underline::after {
+    @apply content-[''] absolute left-0 bottom-0 w-0 h-0.5 bg-primary transition-all duration-300;
+  }
+  
+  .hover-underline:hover::after {
+    @apply w-full;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent;
+  }
+  
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+</style>
