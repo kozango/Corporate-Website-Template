@@ -6,21 +6,33 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 export async function getStaticPaths() {
-  const { contents } = await getBlogs({ limit: 100 });
+  const { contents } = await handleAPIError(
+    getBlogs({ limit: 100 }),
+    { contents: [] }
+  );
   return contents.map((blog) => ({
     params: { id: blog.id },
   }));
 }
 
 const { id } = Astro.params;
-const blog = await getBlogDetail(id!);
-const formattedDate = format(new Date(blog.publishedAt), 'yyyy年MM月dd日', { locale: ja });
 
-// 関連記事を取得（同じカテゴリーの記事）
-const { contents: relatedBlogs } = await getBlogs({
-  filters: `category[equals]${blog.category.id}`,
-  limit: 3,
-});
+// 記事詳細を取得
+try {
+  const blog = await getBlogDetail(id!);
+  const formattedDate = format(new Date(blog.publishedAt), 'yyyy年MM月dd日', { locale: ja });
+
+  // 関連記事を取得（同じカテゴリーの記事）
+  const { contents: relatedBlogs = [] } = await handleAPIError(
+    getBlogs({
+      filters: `category[equals]${blog.category.id}`,
+      limit: 3,
+    }),
+    { contents: [] }
+  );
+} catch (error) {
+  return Astro.redirect('/404');
+}
 
 // 前後の記事を取得（今回は実装しない - 必要に応じて実装）
 ---

@@ -27,14 +27,22 @@ const { popularArticles = [] } = Astro.props;
   {/* 検索フォーム */}
   <div>
     <h3 class="text-lg font-bold mb-4">KEYWORD</h3>
-    <div class="relative">
+    <form action="/media" method="get" class="relative">
       <input
         type="search"
+        name="q"
         placeholder="資料デザイン..."
         class="w-full pl-4 pr-10 py-2 border rounded-lg"
+        value={Astro.url.searchParams.get('q') || ''}
       />
-      <Search class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-    </div>
+      <button 
+        type="submit"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        aria-label="検索"
+      >
+        <Search class="h-5 w-5" />
+      </button>
+    </form>
   </div>
 
   {/* 人気記事 */}

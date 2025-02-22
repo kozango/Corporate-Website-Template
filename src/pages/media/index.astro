@@ -6,22 +6,44 @@ import ArticleCard from '../../components/ArticleCard.astro';
 import MediaSidebar from '../../components/MediaSidebar.astro';
 import PaginationControls from '../../components/PaginationControls.astro';
 import { getBlogs } from '../../lib/microcms';
+import { handleAPIError } from '../../utils/error';
 
-// ページネーションの設定
+// 検索クエリとページネーションの設定
 const PER_PAGE = 10;
 const currentPage = Number(Astro.url.searchParams.get('page') || '1');
+const searchQuery = Astro.url.searchParams.get('q');
 
-// 記事一覧を取得
-const { contents: blogs, totalCount } = await getBlogs({
+// 検索クエリがあればフィルタリングを追加
+const queries: {
+  offset?: number;
+  limit?: number;
+  q?: string;
+  filters?: string;
+} = {
   offset: (currentPage - 1) * PER_PAGE,
   limit: PER_PAGE,
-});
+};
+
+if (searchQuery) {
+  queries.q = searchQuery;
+}
+
+// 記事一覧を取得
+const { contents: blogs = [], totalCount = 0 } = await handleAPIError(
+  getBlogs(queries),
+  { contents: [], totalCount: 0 }
+);
 
 // 人気記事を取得（今はダミーデータ、後で実装）
 const popularArticles = blogs.slice(0, 3);
 
 // 総ページ数を計算
-const totalPages = Math.ceil(totalCount / PER_PAGE);
+const totalPages = Math.max(1, Math.ceil(totalCount / PER_PAGE));
+
+// 現在のページが総ページ数を超えている場合はリダイレクト
+if (currentPage > totalPages) {
+  return Astro.redirect('/media');
+}
 ---
 
 <Layout title="メディア | Kumono" description="Kumonoのメディアページです。最新の記事や情報をご覧いただけます。">
