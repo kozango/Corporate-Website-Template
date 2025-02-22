@@ -1,0 +1,33 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Container from '../../components/Container.astro';
+import PageHeader from '../../components/PageHeader.astro';
+
+// TODO: microCMSのクライアントを設定
+// const blogs = await getBlogs();
+---
+
+<Layout title="メディア | Kumono" description="Kumonoのメディアページです。最新の記事や情報をご覧いただけます。">
+  <PageHeader
+    title="MEDIA"
+    subtitle="最新の記事や情報をご覧いただけます"
+  />
+  
+  <Container className="py-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* TODO: ArticleCardコンポーネントを実装して記事一覧を表示 */}
+      <div class="col-span-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* {blogs.map((blog) => (
+            <ArticleCard blog={blog} />
+          ))} */}
+        </div>
+      </div>
+      
+      {/* TODO: MediaSidebarコンポーネントを実装 */}
+      <div class="col-span-1">
+        {/* <MediaSidebar /> */}
+      </div>
+    </div>
+  </Container>
+</Layout>
