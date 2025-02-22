@@ -1,0 +1,80 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+}
+
+const { currentPage, totalPages, baseUrl } = Astro.props;
+
+const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+const showEllipsis = totalPages > 7;
+
+function getVisiblePages() {
+  if (!showEllipsis) return pages;
+
+  if (currentPage <= 3) {
+    return [...pages.slice(0, 5), '...', totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, '...', ...pages.slice(totalPages - 5)];
+  }
+
+  return [
+    1,
+    '...',
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    '...',
+    totalPages,
+  ];
+}
+
+const visiblePages = getVisiblePages();
+---
+
+<nav class="flex justify-center space-x-2" aria-label="Pagination">
+  {currentPage > 1 && (
+    <a
+      href={`${baseUrl}?page=${currentPage - 1}`}
+      class="px-3 py-2 rounded-lg hover:bg-gray-100"
+      aria-label="Previous page"
+    >
+      ←
+    </a>
+  )}
+
+  {visiblePages.map((page) => {
+    if (page === '...') {
+      return <span class="px-3 py-2">...</span>;
+    }
+
+    const isCurrentPage = page === currentPage;
+    return (
+      <a
+        href={`${baseUrl}?page=${page}`}
+        class:list={[
+          'px-3 py-2 rounded-lg',
+          isCurrentPage
+            ? 'bg-gray-900 text-white'
+            : 'hover:bg-gray-100 text-gray-700',
+        ]}
+        aria-current={isCurrentPage ? 'page' : undefined}
+      >
+        {page}
+      </a>
+    );
+  })}
+
+  {currentPage < totalPages && (
+    <a
+      href={`${baseUrl}?page=${currentPage + 1}`}
+      class="px-3 py-2 rounded-lg hover:bg-gray-100"
+      aria-label="Next page"
+    >
+      →
+    </a>
+  )}
+</nav>

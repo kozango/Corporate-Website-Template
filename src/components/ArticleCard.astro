@@ -1,0 +1,37 @@
+---
+import type { Blog } from '../lib/microcms';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
+
+interface Props {
+  blog: Blog;
+}
+
+const { blog } = Astro.props;
+const formattedDate = format(new Date(blog.publishedAt), 'yyyy年MM月dd日', { locale: ja });
+---
+
+<a href={`/media/${blog.id}`} class="block group">
+  <div class="space-y-4">
+    {blog.eyecatch && (
+      <div class="aspect-video overflow-hidden rounded-lg">
+        <img
+          src={blog.eyecatch.url}
+          alt={blog.title}
+          width={blog.eyecatch.width}
+          height={blog.eyecatch.height}
+          class="w-full h-full object-cover transition-transform group-hover:scale-105"
+        />
+      </div>
+    )}
+    <div class="space-y-2">
+      <span class="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm">
+        {blog.category.name}
+      </span>
+      <h3 class="text-xl font-semibold group-hover:text-blue-600">
+        {blog.title}
+      </h3>
+      <p class="text-gray-600 text-sm">{formattedDate}</p>
+    </div>
+  </div>
+</a>

@@ -1,0 +1,82 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Container from '../../components/Container.astro';
+import { getBlogDetail, getBlogs } from '../../lib/microcms';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
+
+export async function getStaticPaths() {
+  const { contents } = await getBlogs({ limit: 100 });
+  return contents.map((blog) => ({
+    params: { id: blog.id },
+  }));
+}
+
+const { id } = Astro.params;
+const blog = await getBlogDetail(id!);
+const formattedDate = format(new Date(blog.publishedAt), 'yyyy年MM月dd日', { locale: ja });
+
+// 関連記事を取得（同じカテゴリーの記事）
+const { contents: relatedBlogs } = await getBlogs({
+  filters: `category[equals]${blog.category.id}`,
+  limit: 3,
+});
+
+// 前後の記事を取得（今回は実装しない - 必要に応じて実装）
+---
+
+<Layout title={`${blog.title} | Kumono`} description={blog.content.slice(0, 120)}>
+  <Container className="py-12">
+    <article class="max-w-3xl mx-auto">
+      {/* カテゴリーとタイトル */}
+      <div class="mb-8">
+        <span class="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm mb-4">
+          {blog.category.name}
+        </span>
+        <h1 class="text-4xl font-bold mb-4">{blog.title}</h1>
+        <time class="text-gray-600">{formattedDate}</time>
+      </div>
+
+      {/* アイキャッチ画像 */}
+      {blog.eyecatch && (
+        <div class="mb-8">
+          <img
+            src={blog.eyecatch.url}
+            alt={blog.title}
+            width={blog.eyecatch.width}
+            height={blog.eyecatch.height}
+            class="w-full rounded-lg"
+          />
+        </div>
+      )}
+
+      {/* 本文 */}
+      <div class="prose prose-lg max-w-none mb-12" set:html={blog.content} />
+
+      {/* 関連記事 */}
+      {relatedBlogs.length > 0 && (
+        <div class="border-t pt-8">
+          <h2 class="text-2xl font-bold mb-6">関連記事</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {relatedBlogs.map((relatedBlog) => (
+              <a href={`/media/${relatedBlog.id}`} class="group">
+                {relatedBlog.eyecatch && (
+                  <div class="aspect-video overflow-hidden rounded-lg mb-4">
+                    <img
+                      src={relatedBlog.eyecatch.url}
+                      alt={relatedBlog.title}
+                      class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                )}
+                <h3 class="font-semibold group-hover:text-blue-600">
+                  {relatedBlog.title}
+                </h3>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </article>
+  </Container>
+</Layout>

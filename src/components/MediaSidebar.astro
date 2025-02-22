@@ -1,0 +1,64 @@
+---
+import { Search } from 'lucide-astro';
+import type { Blog } from '../lib/microcms';
+
+interface Props {
+  popularArticles?: Blog[];
+}
+
+const { popularArticles = [] } = Astro.props;
+---
+
+<div class="space-y-8">
+  {/* CTA セクション */}
+  <div class="bg-blue-50 p-6 rounded-lg">
+    <h3 class="text-xl font-bold mb-4">データ活用のパートナー</h3>
+    <p class="text-gray-600 mb-4">
+      社内のデータがカオスになっている... データ人材の採用ができずデータ活用が進まない... などのお悩みはありませんか？stableでは、データ基盤整備をはじめとして、データ領域のパートナーとして、お客様のデータ活用を支援します。
+    </p>
+    <a
+      href="/contact"
+      class="block text-center bg-black text-white py-2 px-4 rounded hover:bg-gray-800"
+    >
+      詳しく見る
+    </a>
+  </div>
+
+  {/* 検索フォーム */}
+  <div>
+    <h3 class="text-lg font-bold mb-4">KEYWORD</h3>
+    <div class="relative">
+      <input
+        type="search"
+        placeholder="資料デザイン..."
+        class="w-full pl-4 pr-10 py-2 border rounded-lg"
+      />
+      <Search class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+    </div>
+  </div>
+
+  {/* 人気記事 */}
+  <div>
+    <h3 class="text-lg font-bold mb-4">RANKING</h3>
+    <div class="space-y-4">
+      {popularArticles.map((article) => (
+        <a href={`/media/${article.id}`} class="flex gap-4 group">
+          {article.eyecatch && (
+            <div class="w-[120px] h-[80px] overflow-hidden rounded">
+              <img
+                src={article.eyecatch.url}
+                alt={article.title}
+                width={120}
+                height={80}
+                class="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <h4 class="flex-1 text-sm group-hover:text-blue-600">
+            {article.title}
+          </h4>
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
