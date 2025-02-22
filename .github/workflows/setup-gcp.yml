@@ -1,0 +1,114 @@
+name: Setup GCP Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: asia-northeast1
+  WIF_POOL: github-actions-pool
+  WIF_PROVIDER: github-provider
+  SERVICE_ACCOUNT_ID: kumono-media-deployer
+  SERVICE_ACCOUNT_EMAIL: kumono-media-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+jobs:
+  setup-gcp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Create Service Account
+        run: |
+          # サービスアカウントの作成
+          if ! gcloud iam service-accounts describe $SERVICE_ACCOUNT_EMAIL --project=$PROJECT_ID; then
+            gcloud iam service-accounts create $SERVICE_ACCOUNT_ID \
+              --display-name="Kumono Media Deployer" \
+              --project=$PROJECT_ID
+          fi
+
+          # 必要な権限の付与
+          gcloud projects add-iam-policy-binding $PROJECT_ID \
+            --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+            --role="roles/run.admin"
+
+          gcloud projects add-iam-policy-binding $PROJECT_ID \
+            --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+            --role="roles/storage.admin"
+
+      - name: Setup Workload Identity Federation
+        run: |
+          # Workload Identity Poolの作成
+          if ! gcloud iam workload-identity-pools describe $WIF_POOL \
+            --project=$PROJECT_ID --location=global; then
+            gcloud iam workload-identity-pools create $WIF_POOL \
+              --project=$PROJECT_ID \
+              --location=global \
+              --display-name="GitHub Actions Pool"
+          fi
+
+          # プールのプロバイダー作成
+          POOL_NAME="projects/$PROJECT_ID/locations/global/workloadIdentityPools/$WIF_POOL"
+          if ! gcloud iam workload-identity-pools providers describe $WIF_PROVIDER \
+            --project=$PROJECT_ID --location=global --workload-identity-pool=$WIF_POOL; then
+            gcloud iam workload-identity-pools providers create-oidc $WIF_PROVIDER \
+              --project=$PROJECT_ID \
+              --location=global \
+              --workload-identity-pool=$WIF_POOL \
+              --display-name="GitHub Actions Provider" \
+              --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
+              --issuer-uri="https://token.actions.githubusercontent.com"
+          fi
+
+          # サービスアカウントとGitHubリポジトリの連携
+          gcloud iam service-accounts add-iam-policy-binding $SERVICE_ACCOUNT_EMAIL \
+            --project=$PROJECT_ID \
+            --role="roles/iam.workloadIdentityUser" \
+            --member="principalSet://iam.googleapis.com/$POOL_NAME/attribute.repository/kumono/kumono-media"
+
+      - name: Enable Required APIs
+        run: |
+          gcloud services enable run.googleapis.com --project=$PROJECT_ID
+          gcloud services enable iam.googleapis.com --project=$PROJECT_ID
+          gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
+
+      - name: Create Cloud Run Service
+        run: |
+          # Cloud Runサービスの作成（初回のみ）
+          gcloud run deploy kumono-media \
+            --project=$PROJECT_ID \
+            --region=$REGION \
+            --image=gcr.io/$PROJECT_ID/kumono-media:latest \
+            --platform=managed \
+            --allow-unauthenticated \
+            --service-account=$SERVICE_ACCOUNT_EMAIL \
+            --set-env-vars="MICROCMS_SERVICE_DOMAIN=${{ secrets.MICROCMS_SERVICE_DOMAIN }}" \
+            --set-env-vars="MICROCMS_API_KEY=${{ secrets.MICROCMS_API_KEY }}" \
+            || true  # 既に存在する場合はエラーを無視
+
+      - name: Output Configuration
+        run: |
+          echo "GCP Setup completed successfully!"
+          echo "Workload Identity Provider: projects/$PROJECT_ID/locations/global/workloadIdentityPools/$WIF_POOL/providers/$WIF_PROVIDER"
+          echo "Service Account: $SERVICE_ACCOUNT_EMAIL"
